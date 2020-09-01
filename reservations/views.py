@@ -5,7 +5,6 @@ from rest_framework.response import Response
 from .serializers import RestaurantSerializer, TableSerializer, ReservationSerializer
 from .permissions import IsOwnerOrReadOnly, IsRestaurantOwner, IsReservationByUser
 from rest_framework.decorators import api_view, renderer_classes
-from rest_framework.renderers import JSONRenderer, TemplateHTMLRenderer, BrowsableAPIRenderer
 from datetime import datetime, timedelta
 from .utils import get_table_for_reservation
 
@@ -29,7 +28,6 @@ class RestaurantUpdateRetrieveDelete(generics.RetrieveUpdateDestroyAPIView):
 
 
 class TablesListCreate(generics.ListCreateAPIView):
-    queryset = Table.objects.all()
     serializer_class = TableSerializer
     permission_classes = [
         permissions.IsAuthenticated, IsRestaurantOwner]
@@ -38,6 +36,10 @@ class TablesListCreate(generics.ListCreateAPIView):
         restaurant = Restaurant.objects.get(pk=self.kwargs['restaurant_id'])
         serializer.save(restaurant=restaurant)
 
+    def get_queryset(self):
+        restaurant = Restaurant.objects.get(pk=self.kwargs['restaurant_id'])
+        return Table.objects.filter(restaurant=restaurant)
+
 
 class TableUpdateRetrieveDelete(generics.RetrieveUpdateDestroyAPIView):
     queryset = Table.objects.all()
@@ -45,9 +47,12 @@ class TableUpdateRetrieveDelete(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [
         permissions.IsAuthenticated, IsRestaurantOwner]
 
+    def get_queryset(self):
+        restaurant = Restaurant.objects.get(pk=self.kwargs['restaurant_id'])
+        return Table.objects.filter(restaurant=restaurant)
+
 
 class ReservationListCreate(generics.ListCreateAPIView):
-    queryset = Reservation.objects.all()
     serializer_class = ReservationSerializer
     permission_classes = [
         permissions.IsAuthenticated, IsReservationByUser]
@@ -71,7 +76,6 @@ class ReservationListCreate(generics.ListCreateAPIView):
 
 
 class ReservationRetrieveDelete(generics.RetrieveDestroyAPIView):
-    queryset = Reservation.objects.all()
     serializer_class = ReservationSerializer
     permission_classes = [
         permissions.IsAuthenticated, IsReservationByUser]
@@ -117,7 +121,7 @@ def restaurant_reservation(request, restaurant_id):
     end_datetime = datetime(
         year, month, day, hour=restaurant_closing_time.hour, minute=restaurant_closing_time.minute)
     if(start_datetime >= end_datetime):
-        start_datetime = start_datetime + timedelta(day=1)
+        end_datetime = end_datetime + timedelta(days=1)
 
     curr_datetime = start_datetime
     try:

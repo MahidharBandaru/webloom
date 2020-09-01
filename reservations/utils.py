@@ -13,7 +13,7 @@ def get_table_for_reservation(restaurant, date_time, people):
         datetime__gt=time_lower, datetime__lt=time_upper, restaurant=restaurant, people__gte=people-2, people__lte=people+2)
 
     suitable_tables = Table.objects.filter(
-        capacity__gte=people, capacity__lte=people+2)
+        restaurant=restaurant, capacity__gte=people, capacity__lte=people+2)
 
     free_tables = set()
     for table in suitable_tables:
